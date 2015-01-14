@@ -1,0 +1,764 @@
+Declare @MigrateElement BIT, @MigrateSubElement BIT, @MigrateElementPosition BIT, @MigrateInlineStyles BIT
+, @SP_ElementMover Bit, @SqlCommand VARCHAR(MAX), @Elements VARCHAR(500), @Structures VARCHAR(500)
+, @Sections VARCHAR(500), @SubElements VARCHAR(500), @Client VARCHAR(100), @Client INT, @ElementPositions VARCHAR(500)
+, @DeleteElement Bit, @DeleteDocumentElementData INT, @DeleteCustomerSpecificSubelements INT, @Confirmation VARCHAR(MAX)
+/*-------------------------------------------------------------------------------------------------------
+
+ AUTHOR:   ALEX ROOKE
+ LAST EDIT BY: ALEX ROOKE
+ CREATED:  2014-11-15 16:12:47.556
+ TITLE:   ***********************
+ DESCRIPTION: Use this tool to build the desired stored proc. reduces syntax error or false  risk
+ REGIONS:  ALL
+ TESTED REGION: ****************
+ select getdate()
+-------------------------------------------------------------------------------------------------------*/
+
+SET @Client = ''
+SET @Structures = ''
+SET @Sections = ''
+SET @Elements = ''
+SET @SubElements = ''
+SET @ElementPositions = ''
+
+/*---------------- Delete Element Parameters  1 = YES   0 = NO ----------------------------------------*/
+
+SET @DeleteDocumentElementData = 0
+Set @DeleteCustomerSpecificSubelements = 0
+
+/*---------------- Which stored Proc?    1 = YES   0 = NO  *Cannot chose more than 1*  ----------------*/
+
+Set @*************** = 0
+Set @*************** = 0
+Set @*************** = 0  
+Set @*************** = 0  
+Set @*************** = 0
+Set @*************** = 0   -- RETIRED SP, Not yet Built
+
+
+/*=====================================================================================================
+  START START START START START START START START START START START START START START START START START
+=======================================================================================================*/
+/* SP Builder */
+
+/*01/05/15 Security Update -- No longer needed to prevent SQL Injection
+
+--Security Check ;-)
+IF (@Client like '%;%' OR @Structures like '%;%' OR @Sections like '%;%' OR @Elements like '%;%' 
+ OR @SubElements like '%;%' OR @ElementPositions like '%;%' OR @Client like '%''%' OR @Structures like '%''%' 
+ OR @Sections like '%''%' OR @Elements like '%''%' OR @SubElements like '%''%' OR @ElementPositions like '%''%' OR
+ @Client like '%)%' OR @Structures like '%)%' OR @Sections like '%)%' OR @Elements like '%)%' 
+ OR @SubElements like '%)%' OR @ElementPositions like '%)%')
+BEGIN
+ SET @SqlCommand = 'Please use a standard comma seperated value format. Other non-alphanumeric characters will not be accepted.'
+ PRINT @SqlCommand
+END
+ELSE 
+BEGIN
+01/05/15 Security Update -- No longer needed to prevent SQL Injection*/
+
+--Define CLient
+IF (@Client != '')
+BEGIN
+ IF EXISTS (Select C.Client from CL_Ient C where
+  (c.Client_ID LIKE CASE WHEN NOT ISNULL(@Client, '') = '' AND ISNUMERIC(@Client) = 0 THEN @Client ELSE CASE WHEN ISNUMERIC(@Client) = 0 THEN c.Client_ID END END
+   OR c.ClientName LIKE CASE WHEN NOT ISNULL(@Client, '') = '' AND ISNUMERIC(@Client) = 0 THEN @Client ELSE CASE WHEN ISNUMERIC(@Client) = 0 THEN c.ClientName END END
+   OR c.Client = CASE WHEN NOT ISNULL(@Client, '') = '' AND ISNUMERIC(@Client) = 1 THEN @Client ELSE CASE WHEN ISNUMERIC(@Client) = 1 THEN c.Client END END
+   OR c.Client = CASE WHEN ISNULL(@Client, '') = '' THEN c.Client END))
+ BEGIN
+ SET @Client = ( Select C.Client from CL_Ient C where
+  (c.Client_ID LIKE CASE WHEN NOT ISNULL(@Client, '') = '' AND ISNUMERIC(@Client) = 0 THEN @Client ELSE CASE WHEN ISNUMERIC(@Client) = 0 THEN c.Client_ID END END
+   OR c.ClientName LIKE CASE WHEN NOT ISNULL(@Client, '') = '' AND ISNUMERIC(@Client) = 0 THEN @Client ELSE CASE WHEN ISNUMERIC(@Client) = 0 THEN c.ClientName END END
+   OR c.Client = CASE WHEN NOT ISNULL(@Client, '') = '' AND ISNUMERIC(@Client) = 1 THEN @Client ELSE CASE WHEN ISNUMERIC(@Client) = 1 THEN c.Client END END
+   OR c.Client = CASE WHEN ISNULL(@Client, '') = '' THEN c.Client END))
+ END
+ ELSE
+ BEGIN
+  Set @SqlCommand = 'Client not found'
+  PRINT @SqlCommand
+ END
+END
+IF (ISNULL(@Client,'')='')
+BEGIN
+ Set @SqlCommand = 'CLIENT MUST BE DEFINED'
+ PRINT @SqlCommand 
+END
+
+--Migrate Element
+IF (@*************** = 1 AND @Client != '')
+BEGIN
+ -- Elements ONLY
+ IF (@Elements != '' AND ISNULL(@Structures,'') = '' AND ISNULL(@Sections,'') = '') 
+ BEGIN
+  Set @SqlCommand = 'Select ''EXEC ***************'' AS ''*************** StoredProc'',SSL.Client,'','' AS '','', 
+       SSL.Structure,'',''AS '','', SEL.Section,'',''AS '','', SEL.Element
+       From *************** SSL
+       inner join *************** SEL ON SSL.Section = SEL.Section
+       Where SEL.Element in('+@Elements+') 
+        AND SSL.Client = '+Cast(@Client AS VARCHAR(8))+'
+       Order By SSL.Structure, 
+         SEL.Section, 
+         SEL.Element'
+  EXEC (@SqlCommand)
+ END
+ -- Elements And Structures
+ IF (@Elements != '' AND @Structures != '' AND ISNULL(@Sections,'') = '')   
+ BEGIN
+  Set @SqlCommand = 'Select ''EXEC ***************'' AS ''*************** StoredProc'',SSL.Client,'','' AS '','', 
+        SSL.Structure,'',''AS '','', SEL.Section,'',''AS '','', SEL.Element
+        From *************** SSL
+        inner join *************** SEL ON SSL.Section = SEL.Section
+        Where SEL.Element in('+@Elements+') 
+         AND
+         SSL.Structure in ('+@Structures+')  
+        AND SSL.Client = '+Cast(@Client AS VARCHAR(8))+'
+        Order By SSL.Structure, 
+          SEL.Section, 
+          SEL.Element'
+   EXEC (@SqlCommand)
+ END
+ --All s
+ IF (@Elements != '' AND @Structures != '' AND @Sections != '')      
+ BEGIN
+  Set @SqlCommand = 'Select ''EXEC ***************'' AS ''*************** StoredProc'',SSL.Client,'','' AS '','', 
+        SSL.Structure,'',''AS '','', SEL.Section,'',''AS '','', SEL.Element
+        From *************** SSL
+        inner join *************** SEL ON SSL.Section = SEL.Section
+        Where SEL.Element in('+@Elements+') 
+         AND
+         SSL.Structure in ('+@Structures+') 
+         AND
+         SEL.Section in ('+@Sections+') 
+        AND SSL.Client = '+Cast(@Client AS VARCHAR(8))+'
+        Order By SSL.Structure, 
+          SEL.Section, 
+          SEL.Element'
+   EXEC (@SqlCommand)
+ END
+ --Elements and Sections
+ IF (@Elements != '' AND ISNULL(@Structures,'') = '' AND @Sections != '')   
+ BEGIN
+  Set @SqlCommand = 'Select ''EXEC ***************'' AS ''*************** StoredProc'',SSL.Client,'','' AS '','', 
+       SSL.Structure,'',''AS '','', SEL.Section,'',''AS '','', SEL.Element
+       From *************** SSL
+       inner join *************** SEL ON SSL.Section = SEL.Section
+       Where SEL.Element in('+@Elements+') 
+        AND
+        SEL.Section in ('+@Sections+') 
+        AND SSL.Client = '+Cast(@Client AS VARCHAR(8))+'
+       Order By SSL.Structure, 
+         SEL.Section, 
+         SEL.Element'
+  EXEC (@SqlCommand)
+ END
+ --Structures Only
+ IF (ISNULL(@Elements,'') = '' AND @Structures != '' AND ISNULL(@Sections,'')='')  
+ BEGIN
+  Set @SqlCommand = 'Select ''EXEC ***************'' AS ''*************** StoredProc'',SSL.Client,'','' AS '','', 
+       SSL.Structure,'',''AS '','', SEL.Section,'',''AS '','', SEL.Element
+       From *************** SSL
+       inner join *************** SEL ON SSL.Section = SEL.Section
+       Where SSL.Structure in('+@Structures+') 
+        AND SSL.Client = '+Cast(@Client AS VARCHAR(8))+'
+       Order By SSL.Structure, 
+         SEL.Section, 
+         SEL.Element'
+  EXEC (@SqlCommand)
+ END
+ --Sections Only
+ IF (ISNULL(@Elements,'') = '' AND ISNULL(@Structures,'')= '' AND @Sections !='')   
+ BEGIN
+  Set @SqlCommand = 'Select ''EXEC ***************'' AS ''*************** StoredProc'',SSL.Client,'','' AS '','', 
+       SSL.Structure,'',''AS '','', SEL.Section,'',''AS '','', SEL.Element
+       From *************** SSL
+       inner join *************** SEL ON SSL.Section = SEL.Section
+       Where SEL.Section in('+@Sections+') 
+        AND SSL.Client = '+Cast(@Client AS VARCHAR(8))+'
+       Order By SSL.Structure, 
+         SEL.Section, 
+         SEL.Element'
+  EXEC (@SqlCommand)
+ END
+ --Sections And Structure s
+ IF (ISNULL(@Elements,'') = '' AND @Structures != '' AND @Sections !='')   
+ BEGIN
+  Set @SqlCommand = 'Select ''EXEC ***************'' AS ''*************** StoredProc'',SSL.Client,'','' AS '','', 
+       SSL.Structure,'',''AS '','', SEL.Section,'',''AS '','', SEL.Element
+       From *************** SSL
+       inner join *************** SEL ON SSL.Section = SEL.Section
+       Where SEL.Section in('+@Sections+')
+        AND  
+        SSL.Structure in ('+@Structures+') 
+        AND SSL.Client = '+Cast(@Client AS VARCHAR(8))+'
+       Order By SSL.Structure, 
+         SEL.Section, 
+         SEL.Element'
+  EXEC (@SqlCommand)
+ END
+ -- No s
+ IF (ISNULL(@Elements,'')='' AND ISNULL(@Structures,'')= ''AND ISNULL(@Sections,'')='')
+ BEGIN
+  SET @SqlCommand = 'Please define constraints or confirm stored proc selection'
+  PRINT @SqlCommand 
+ END
+   GoTo ConfirmationScripts
+END
+
+--Migrate SubElement
+ELSE IF (@MigrateSubElement = 1 AND @Client != '')
+BEGIN
+ --SubElementOnly
+ IF (@SubElements != ''AND ISNULL(@Structures,'') = '' AND ISNULL(@Elements,'')='')
+ BEGIN
+  Set @SqlCommand = 'Select ''EXEC ***************'' AS ''*************** StoredProc'',SSL.Client,'','' AS '','', SSL.Structure,'',''AS '','', SEL.Element,'',''AS '','', SubEl.Subelement
+      From *************** SSL
+      inner join *************** SEL ON SSL.Section = SEL.Section
+      Inner Join *************** SubEl ON SEL.Element = SubEl.Element
+      Where SubEl.Subelement in('+@SubElements+')
+         AND SSL.Client = '+Cast(@Client AS VARCHAR(8))+' 
+      Order By SSL.Structure, 
+        SEL.Section, 
+        SEL.Element,
+        SubEl.Subelement'
+  EXEC (@SqlCommand)
+ END
+ --Element Only
+ IF (ISNULL(@SubElements,'') =''AND ISNULL(@Structures,'') = '' AND @Elements!='')
+ BEGIN
+  Set @SqlCommand = 'Select ''EXEC ***************'' AS ''*************** StoredProc'',SSL.Client,'','' AS '','', SSL.Structure,'',''AS '','', SEL.Element,'',''AS '','', SubEl.Subelement
+      From *************** SSL
+      inner join *************** SEL ON SSL.Section = SEL.Section
+      Inner Join *************** SubEl ON SEL.Element = SubEl.Element
+      Where SEL.Element in('+@Elements+')
+         AND SSL.Client = '+Cast(@Client AS VARCHAR(8))+' 
+      Order By SSL.Structure, 
+        SEL.Section, 
+        SEL.Element,
+        SubEl.Subelement'
+  EXEC (@SqlCommand)
+ END
+ -- SubElement AND Element
+ IF (@SubElements != ''AND ISNULL(@Structures,'') = '' AND @Elements !='')
+ BEGIN
+  Set @SqlCommand = 'Select ''EXEC ***************'' AS ''*************** StoredProc'',SSL.Client,'','' AS '','', SSL.Structure,'',''AS '','', SEL.Element,'',''AS '','', SubEl.Subelement
+      From *************** SSL
+      inner join *************** SEL ON SSL.Section = SEL.Section
+      Inner Join *************** SubEl ON SEL.Element = SubEl.Element
+      Where SubEl.Subelement in('+@SubElements+')
+         AND SSL.Client = '+Cast(@Client AS VARCHAR(8))+' 
+      Order By SSL.Structure, 
+        SEL.Section, 
+        SEL.Element,
+        SubEl.Subelement'
+  EXEC (@SqlCommand)
+ END
+ --SubElement and Structure
+ IF (@SubElements != ''AND @Structures != '' AND ISNULL(@Elements,'')='')
+ BEGIN
+  Set @SqlCommand = 'Select ''EXEC ***************'' AS ''*************** StoredProc'',SSL.Client,'','' AS '','', SSL.Structure,'',''AS '','', SEL.Element,'',''AS '','', SubEl.Subelement
+      From *************** SSL
+      inner join *************** SEL ON SSL.Section = SEL.Section
+      Inner Join *************** SubEl ON SEL.Element = SubEl.Element
+      Where SubEl.Subelement in('+@SubElements+')
+         AND SSL.Structure in ('+@Structures+')
+         AND SSL.Client = '+Cast(@Client AS VARCHAR(8))+' 
+      Order By SSL.Structure, 
+        SEL.Section, 
+        SEL.Element,
+        SubEl.Subelement'
+  EXEC (@SqlCommand)
+ END
+ --Structure and Element
+ IF (ISNULL(@SubElements,'')= '' AND @Structures != '' AND @Elements !='')
+ BEGIN
+  Set @SqlCommand = 'Select ''EXEC ***************'' AS ''*************** StoredProc'',SSL.Client,'','' AS '','', SSL.Structure,'',''AS '','', SEL.Element,'',''AS '','', SubEl.Subelement
+      From *************** SSL
+      inner join *************** SEL ON SSL.Section = SEL.Section
+      Inner Join *************** SubEl ON SEL.Element = SubEl.Element
+      Where SEL.Element in('+@Elements+')
+         AND SSL.Structure in ('+@Structures+')
+         AND SSL.Client = '+Cast(@Client AS VARCHAR(8))+' 
+      Order By SSL.Structure, 
+        SEL.Section, 
+        SEL.Element,
+        SubEl.Subelement'
+  EXEC (@SqlCommand)
+ END
+ -- All parameters Defined
+ IF (@SubElements != ''AND @Structures != '' AND @Elements !='')
+ BEGIN
+  Set @SqlCommand = 'Select ''EXEC ***************'' AS ''*************** StoredProc'',SSL.Client,'','' AS '','', SSL.Structure,'',''AS '','', SEL.Element,'',''AS '','', SubEl.Subelement
+      From *************** SSL
+      inner join *************** SEL ON SSL.Section = SEL.Section
+      Inner Join *************** SubEl ON SEL.Element = SubEl.Element
+      Where SubEl.Subelement in('+@SubElements+')
+         AND SEL.Element in('+@Elements+')
+         AND SSL.Structure in ('+@Structures+')
+         AND SSL.Client = '+Cast(@Client AS VARCHAR(8))+' 
+      Order By SSL.Structure, 
+        SEL.Section, 
+        SEL.Element,
+        SubEl.Subelement'
+  EXEC (@SqlCommand)
+ END
+ -- Define Parameters
+ IF (ISNULL(@SubElements,'')= '' AND ISNULL(@Elements,'')='')
+ BEGIN
+  SET @SqlCommand = 'Please define constraints or confirm stored proc selection'
+  PRINT @SqlCommand 
+ END
+  GoTo ConfirmationScripts
+END
+-- MigrateElementPosition
+ELSE IF (@*************** = 1 AND @Client != '')
+BEGIN
+ IF (@ElementPositions != '')
+  BEGIN
+   SET @SqlCommand = 'Select ''EXEC ***************'' , ElementPosition
+       From ***************
+       Where ElementPosition in('+@ElementPositions+')'
+   EXEC (@SqlCommand)
+  END
+ Else
+  BEGIN
+   SET @SqlCommand = 'Please define constraints or confirm stored proc selection'
+   PRINT @SqlCommand 
+  END
+  GoTo ConfirmationScripts
+END
+
+-- Migrate Inline Styles
+Else IF(@*************** = 1 AND @Client !='')
+BEGIN
+ IF (@Structures != '')
+  BEGIN
+   Set @SqlCommand = 'If Exists(Select * From *************** where Structure in ('+@Structures+'))
+        BEGIN
+         Select '' EXEC ***************'' ,CS.Client , '','' AS '','', CS.Structure
+         From *************** CS
+         Where CS.Structure in ('+@Structures+')
+         AND CS.Client = ('+Cast(@Client AS Varchar(8))+')
+        END'
+   Exec (@SqlCommand)
+  END
+ ELSE
+  BEGIN
+   SET @SqlCommand = 'Please define constraints or confirm stored proc selection'
+   PRINT @SqlCommand 
+  END
+  GoTo ConfirmationScripts
+END
+
+-- Delete Element
+Else IF (@*************** = 1 AND @Client != '')
+BEGIN
+ -- Element
+ IF (@Elements != '' AND ISNULL(@Structures,'') = '' AND ISNULL(@Sections,'') = '') 
+  BEGIN
+  Set @SqlCommand = 'Select ''EXEC *************** '',SSL.Client, '','' AS '','' , SSL.Structure, '','' AS '','' , SEL.Section, '','' AS '',''
+       , SEL.Element, '','' AS '','' ,'+ CAST(@*************** AS VARCHAR(8))+', '','' AS '','' ,'+CAST(@DeleteCustomerSpecificSubelements AS VARCHAR(8))+'
+       From ***************.dbo.*************** SSL
+       inner join ***************.dbo.*************** SEL ON SSL.Section = SEL.Section
+       Where SEL.Element in('+@Elements+') 
+        AND SSL.Client = '+Cast(@Client AS VARCHAR(8))+'
+       Order By SSL.Structure, 
+         SEL.Section, 
+         SEL.Element'
+  EXEC (@SqlCommand)
+  END
+ -- Elements And Structures
+ IF (@Elements != '' AND @Structures != '' AND ISNULL(@Sections,'') = '')   
+  BEGIN
+  Set @SqlCommand = 'Select ''EXEC *************** '',SSL.Client, '','' AS '','' , SSL.Structure, '','' AS '','' , SEL.Section, '','' AS '',''
+       , SEL.Element, '','' AS '','' ,'+ CAST(@DeleteDocumentElementData AS VARCHAR(8))+', '','' AS '','' ,'+CAST(@DeleteCustomerSpecificSubelements AS VARCHAR(8))+'
+       From ***************.dbo.*************** SSL
+       inner join ***************.dbo.*************** SEL ON SSL.Section = SEL.Section
+       Where SEL.Element in('+@Elements+') 
+        AND
+        SSL.Structure in ('+@Structures+')  
+       AND SSL.Client = '+Cast(@Client AS VARCHAR(8))+'
+       Order By SSL.Structure, 
+         SEL.Section, 
+         SEL.Element'
+  EXEC (@SqlCommand)
+  END
+ --All s
+ IF (@Elements != '' AND @Structures != '' AND @Sections != '')      
+  BEGIN
+  Set @SqlCommand = 'Select ''EXEC *************** '',SSL.Client, '','' AS '','' , SSL.Structure, '','' AS '','' , SEL.Section, '','' AS '',''
+       , SEL.Element, '','' AS '','' ,'+ CAST(@DeleteDocumentElementData AS VARCHAR(8))+', '','' AS '','' ,'+CAST(@DeleteCustomerSpecificSubelements AS VARCHAR(8))+'
+       From ***************.dbo.*************** SSL
+       inner join ***************.dbo.*************** SEL ON SSL.Section = SEL.Section
+       Where SEL.Element in('+@Elements+') 
+        AND
+        SSL.Structure in ('+@Structures+') 
+        AND
+        SEL.Section in ('+@Sections+') 
+       AND SSL.Client = '+Cast(@Client AS VARCHAR(8))+'
+       Order By SSL.Structure, 
+         SEL.Section, 
+         SEL.Element'
+  EXEC (@SqlCommand)
+  END
+ --Elements and Sections
+ IF (@Elements != '' AND ISNULL(@Structures,'') = '' AND @Sections != '')   
+  BEGIN
+  Set @SqlCommand = 'Select ''EXEC *************** '',SSL.Client, '','' AS '','' , SSL.Structure, '','' AS '','' , SEL.Section, '','' AS '',''
+       , SEL.Element, '','' AS '','' ,'+ CAST(@DeleteDocumentElementData AS VARCHAR(8))+', '','' AS '','' ,'+CAST(@DeleteCustomerSpecificSubelements AS VARCHAR(8))+'
+       From ***************.dbo.*************** SSL
+       inner join ***************.dbo.*************** SEL ON SSL.Section = SEL.Section
+       Where SEL.Element in('+@Elements+') 
+        AND
+        SEL.Section in ('+@Sections+') 
+        AND SSL.Client = '+Cast(@Client AS VARCHAR(8))+'
+       Order By SSL.Structure, 
+         SEL.Section, 
+         SEL.Element'
+  EXEC (@SqlCommand)
+  END
+ --Structures Only
+ IF (ISNULL(@Elements,'') = '' AND @Structures != '' AND ISNULL(@Sections,'')='')  
+  BEGIN
+  Set @SqlCommand = 'Select ''EXEC *************** '',SSL.Client, '','' AS '','' , SSL.Structure, '','' AS '','' , SEL.Section, '','' AS '',''
+       , SEL.Element, '','' AS '','' ,'+ CAST(@DeleteDocumentElementData AS VARCHAR(8))+', '','' AS '','' ,'+CAST(@DeleteCustomerSpecificSubelements AS VARCHAR(8))+'
+       From ***************.dbo.*************** SSL
+       inner join ***************.dbo.*************** SEL ON SSL.Section = SEL.Section
+       Where SSL.Structure in('+@Structures+') 
+        AND SSL.Client = '+Cast(@Client AS VARCHAR(8))+'
+       Order By SSL.Structure, 
+         SEL.Section, 
+         SEL.Element'
+  EXEC (@SqlCommand)
+  END
+ --Sections Only
+ IF (ISNULL(@Elements,'') = '' AND ISNULL(@Structures,'')= '' AND @Sections !='')   
+  BEGIN
+  Set @SqlCommand = 'Select ''EXEC *************** '',SSL.Client, '','' AS '','' , SSL.Structure, '','' AS '','' , SEL.Section, '','' AS '',''
+       , SEL.Element, '','' AS '','' ,'+ CAST(@DeleteDocumentElementData AS VARCHAR(8))+', '','' AS '','' ,'+CAST(@DeleteCustomerSpecificSubelements AS VARCHAR(8))+'
+       From ***************.dbo.*************** SSL
+       inner join ***************.dbo.*************** SEL ON SSL.Section = SEL.Section
+       Where SEL.Section in('+@Sections+') 
+        AND SSL.Client = '+Cast(@Client AS VARCHAR(8))+'
+       Order By SSL.Structure, 
+         SEL.Section, 
+         SEL.Element'
+  EXEC (@SqlCommand)
+  END
+ --Sections And Structure s
+ IF (ISNULL(@Elements,'') = '' AND @Structures != '' AND @Sections !='')   
+  BEGIN
+  Set @SqlCommand = 'Select ''EXEC *************** '',SSL.Client, '','' AS '','' , SSL.Structure, '','' AS '','' , SEL.Section, '','' AS '',''
+       , SEL.Element, '','' AS '','' ,'+ CAST(@DeleteDocumentElementData AS VARCHAR(8))+', '','' AS '','' ,'+CAST(@DeleteCustomerSpecificSubelements AS VARCHAR(8))+'
+       From ***************.dbo.*************** SSL
+       inner join ***************.dbo.*************** SEL ON SSL.Section = SEL.Section
+       Where SEL.Section in('+@Sections+')
+        AND  
+        SSL.Structure in ('+@Structures+') 
+        AND SSL.Client = '+Cast(@Client AS VARCHAR(8))+'
+       Order By SSL.Structure, 
+         SEL.Section, 
+         SEL.Element'
+  EXEC (@SqlCommand)
+  END
+ -- No s
+ IF (ISNULL(@Elements,'')='' AND ISNULL(@Structures,'')= ''AND ISNULL(@Sections,'')='')
+  BEGIN
+   SET @SqlCommand = 'Please define constraints or confirm stored proc selection'
+   PRINT @SqlCommand 
+  END
+  GoTo ConfirmationScripts
+End
+--Select 'EXEC ***************' AS 'StoredProc', SEL.Element ,','AS ',',SSL.Client,','AS ',', SEL.Section,',' AS ',', SSL.Structure
+--From *************** SSL
+--inner join *************** SEL ON SSL.Section = SEL.Section
+--Where SEL.Element in() 
+-- --OR 
+-- --AND
+-- --SSL.Structure in (0) 
+-- --OR 
+-- AND
+-- SEL.Section in (0)
+--Order By SSL.Structure, SEL.Section, SEL.Element
+ELSE
+BEGIN
+  SET @SqlCommand = 'Please choose which Stored Procedure to call'
+  PRINT @SqlCommand 
+END
+--END
+
+ConfirmationScripts:
+IF (@*************** = 1)
+BEGIN
+ IF (@*************** != '')
+ BEGIN
+ SET @Confirmation= '-- Section
+Select * from ***************
+ where element in ('+@Elements+')  
+-- Position
+Select * From ***************
+ Where ElementGroup in 
+ (Select ElementGroup from ***************
+  where element in ('+@Elements+'))
+Select * From ***************
+ Where ElementPosition in 
+ (Select ElementPosition from ***************
+  where element in ('+@Elements+'))
+-- Rules
+Select * From ***************
+ Where DestinationElement in ('+@Elements+')
+-- Topics
+Select * From ***************
+ Where Element in ('+@Elements+')
+Select * From ***************
+ Where Topic in (
+ Select Topic From ***************
+  Where Element in ('+@Elements+'))
+-- Element
+Select * from ***************
+ where element in ('+@Elements+')
+-- SubElement
+Select * from ***************
+ where element in ('+@Elements+') 
+Select * from *************** 
+ where subelement in 
+ (Select subelement from ***************
+   where element in ('+@Elements+'))
+-- Graphic
+Select * from *************** 
+ where GraphicResource in 
+ (Select Gres_ from *************** 
+  where subelement in 
+  (Select subelement from ***************
+   where element in ('+@Elements+')))
+-- Variable
+Select * from *************** 
+ where subelement in 
+ (Select subelement from ***************
+  where element in ('+@Elements+'))
+Select * from *************** 
+ where Variable in 
+ (Select Variable from *************** 
+  where subelement in 
+  (Select subelement from ***************
+   where element in ('+@Elements+')))
+-- Sub Variable
+Select * from *************** 
+ where Variable in 
+ (Select variable from *************** 
+  where subelement in 
+  (Select subelement from ***************
+   where element in ('+@Elements+')))
+Select * from *************** 
+ where Variable in 
+ (Select variable from *************** 
+  where subelement in 
+  (Select subelement from ***************
+   where element in ('+@Elements+')))'
+ END
+ Else If (@Sections != '')
+ BEGIN
+  Set @Confirmation ='-- Section
+Select * from ***************
+ where element in 
+ (Select Element from ***************
+  where Section in ('+@Sections+'))
+-- Position
+Select * From ***************
+ Where ElementGroup in 
+ (Select ElementGroup from ***************
+  where element in 
+  (Select Element from ***************
+   where Section in ('+@Sections+')))
+Select * From ***************
+ Where ElementPosition in 
+ (Select ElementPosition from ***************
+  where element in 
+  (Select Element from ***************
+   where Section in ('+@Sections+')))
+-- Rules
+Select * From ***************
+ Where DestinationElement in (
+ Select Element from ***************
+  where Section in ('+@Sections+'))
+-- Topics
+Select * From ***************
+ Where Element in (
+ Select Element from ***************
+  where Section in ('+@Sections+'))
+Select * From ***************
+ Where Topic in (
+ Select Topic From ***************
+  Where Element in (
+  Select Element from ***************
+   where Section in ('+@Sections+')))
+-- Element
+Select * from ***************
+ where element in 
+ (Select Element from ***************
+  where Section in ('+@Sections+'))
+-- SubElement
+Select * from ***************
+ where element in 
+ (Select Element from ***************
+  where Section in ('+@Sections+')) 
+Select * from *************** 
+ where subelement in 
+ (Select subelement from ***************
+   where element in 
+   (Select Element from ***************
+    where Section in ('+@Sections+')))
+-- Graphic
+Select * from *************** 
+ where GraphicResource in 
+ (Select Gres_ from *************** 
+  where subelement in 
+  (Select subelement from ***************
+   where element in 
+   (Select Element from ***************
+    where Section in ('+@Sections+'))))
+-- Variable
+Select * from *************** 
+ where subelement in 
+ (Select subelement from ***************
+  where element in 
+  (Select Element from ***************
+   where Section in ('+@Sections+')))
+Select * from *************** 
+ where Variable in 
+ (Select Variable from *************** 
+  where subelement in 
+  (Select subelement from ***************
+   where element in 
+   (Select Element from ***************
+    where Section in ('+@Sections+'))))
+-- Sub Variable
+Select * from *************** 
+ where Variable in 
+ (Select variable from *************** 
+  where subelement in 
+  (Select subelement from ***************
+   where element in 
+   (Select Element from ***************
+    where Section in ('+@Sections+'))))
+Select * from *************** 
+ where Variable in 
+ (Select variable from *************** 
+  where subelement in 
+  (Select subelement from ***************
+   where element in 
+   (Select Element from ***************
+    where Section in ('+@Sections+'))))'
+ END  
+ ELSE IF (@Structures != '')
+  BEGIN
+   Set @Confirmation = 'For confirmation scripts a minimum level of Sections must be defined'
+  END
+ PRINT @Confirmation
+END
+ELSE IF (@*************** = 1)
+BEGIN
+ IF (@SubElements !='')
+ BEGIN
+ SET @Confirmation= '-- SubElement
+Select * from ***************
+ where Subelement in ('+@SubElements+') 
+Select * from *************** 
+ where subelement in ('+@SubElements+')
+
+-- Graphic
+Select * from *************** 
+ where GraphicResource in 
+ (Select Gres_ from *************** 
+  where subelement in ('+@SubElements+'))
+
+-- Variable
+Select * from *************** 
+ where subelement in ('+@SubElements+')
+Select * from *************** 
+ where Variable in 
+ (Select Variable from *************** 
+  where subelement in ('+@SubElements+'))
+
+-- Sub Variable
+Select * from *************** 
+ where Variable in 
+ (Select variable from *************** 
+  where subelement in ('+@SubElements+'))
+Select * from *************** 
+ where Variable in 
+ (Select variable from *************** 
+  where subelement in ('+@SubElements+'))'
+  END
+  Else IF (@Elements !='')
+  BEGIN
+   SET @Confirmation = '-- SubElement
+Select * from ***************
+ where element in ('+@Elements+') 
+Select * from *************** 
+ where subelement in 
+ (Select subelement from ***************
+   where element in ('+@Elements+'))
+
+-- Graphic
+Select * from *************** 
+ where GraphicResource in 
+ (Select Gres_ from *************** 
+  where subelement in 
+  (Select subelement from ***************
+   where element in ('+@Elements+')))
+
+-- Variable
+Select * from *************** 
+ where subelement in 
+ (Select subelement from ***************
+  where element in ('+@Elements+'))
+Select * from *************** 
+ where Variable in 
+ (Select Variable from *************** 
+  where subelement in 
+  (Select subelement from ***************
+   where element in ('+@Elements+')))
+
+-- Sub Variable
+Select * from *************** 
+ where Variable in 
+ (Select variable from *************** 
+  where subelement in 
+  (Select subelement from ***************
+   where element in ('+@Elements+')))
+Select * from *************** 
+ where Variable in 
+ (Select variable from *************** 
+  where subelement in 
+  (Select subelement from ***************
+   where element in ('+@Elements+')))'
+   END
+  ELSE IF (@Structures != '' OR @Sections != '')
+  BEGIN
+   Set @Confirmation = 'For confirmation scripts a minimum level of Elements must be defined'
+  END
+ PRINT @Confirmation
+END
+ELSE IF (@*************** = 1 AND @ElementPositions !='') 
+BEGIN
+ SET @Confirmation= '-- Position
+Select * From ***************
+ Where ElementPosition in('+@ElementPositions+')
+
+Select * From ***************
+ Where ElementPosition in('+@ElementPositions+')'
+ PRINT @Confirmation
+END
+ELSE IF (@*************** = 1 AND @Structures !='') 
+BEGIN
+ SET @Confirmation= '-- Inline Styles
+Select * From ***************
+ Where Structure in ('+@Structures+')
+ Order by Structure, StyleType, Style'
+ PRINT @Confirmation
+END
+ELSE IF (@*************** = 1)
+BEGIN
+ SET @Confirmation= 'Confirmation scripts have yet to be defined'
+ PRINT @Confirmation
+END
